@@ -1,0 +1,36 @@
+{
+  "name": "secure-offchain-poc",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "deploy:rinkeby": "npx hardhat run deploy/deploy-rinkeby.js --network rinkeby",
+    "etherscan:rinkeby": "npx hardhat verify --network rinkeby"
+  },
+  "dependencies": {
+    "@walletconnect/web3-provider": "^1.7.8",
+    "axios": "^0.27.2",
+    "ethers": "^5.6.9",
+    "moment": "^2.29.4",
+    "moment-duration-format": "^2.3.2",
+    "next": "12.2.3",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-toastify": "^9.0.7",
+    "web3modal": "^1.9.8"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.0",
+    "@nomiclabs/hardhat-etherscan": "^3.1.0",
+    "@nomiclabs/hardhat-waffle": "^2.0.3",
+    "@openzeppelin/contracts": "^4.7.2",
+    "autoprefixer": "^10.4.7",
+    "dotenv": "^16.0.1",
+    "ethereum-waffle": "^3.2.0",
+    "hardhat": "^2.10.1",
+    "postcss": "^8.4.14",
+    "tailwindcss": "^3.1.6"
+  }
+}
