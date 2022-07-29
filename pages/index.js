@@ -138,18 +138,29 @@ export default function Home() {
     console.info('DATA RE-FETCHED')
   }
 
-  const calculate = async () => {
+  const firstTx = async () => {
     try {
       const signer = provider.getSigner()
       const om = new ethers.Contract(omAddress, OffchainMathAbi, signer)
 
-      if (status !== '1') {
-        setIsLoadingTx1(true)
-        const tx1 = await om.first(ethers.utils.parseEther(param1), ethers.utils.parseEther(param2))
-        toastHash(tx1.hash)
-        await tx1.wait()
-        setIsLoadingTx1(false)
-      }
+      setIsLoadingTx1(true)
+      const tx1 = await om.first(ethers.utils.parseEther(param1), ethers.utils.parseEther(param2))
+      toastHash(tx1.hash)
+      await tx1.wait()
+      setIsLoadingTx1(false)
+
+      await fetchData()
+    } catch (e) {
+      console.error(e)
+      toast.error(e.reason || e.message)
+    }
+    setIsLoadingTx1(false)
+  }
+
+  const secondTx = async () => {
+    try {
+      const signer = provider.getSigner()
+      const om = new ethers.Contract(omAddress, OffchainMathAbi, signer)
 
       setIsLoadingSign(true)
       const [result, signature] = await sign()
@@ -171,7 +182,6 @@ export default function Home() {
       console.error(e)
       toast.error(e.reason || e.message)
     }
-    setIsLoadingTx1(false)
     setIsLoadingTx2(false)
     setIsLoadingSign(false)
   }
@@ -214,14 +224,14 @@ export default function Home() {
         <div className="mt-5 flex flex-col items-center">
           {!account ? (
             <button
-              className="border border-dashed w-max bg-white border-blue-700 text-blue-900 font-semibold rounded-md p-2"
+              className="border border-dotted w-max bg-white border-blue-700 text-blue-900 font-semibold rounded-md p-2"
               onClick={connectWallet}
             >
               CONNECT WALLET
             </button>
           ) : (
             <button
-              className="border border-dashed w-max bg-white border-blue-700 text-blue-900 font-semibold rounded-md p-2 break-words"
+              className="border border-dotted w-max bg-white border-blue-700 text-blue-900 font-semibold rounded-md p-2 break-words"
               onClick={disconnectWallet}
             >
               {uglifyAddress(account)}
@@ -231,32 +241,53 @@ export default function Home() {
 
         {account && (
           <div className="w-full flex flex-col items-center justify-center gap-5">
-            <div className="mt-10 max-w-xs w-full flex flex-col gap-2 items-center border border-dashed border-blue-700 p-3 rounded-md">
-              <p>Status: {statuses[status]}</p>
-              <input
-                className="m-1 w-full p-2 border border-blue-700 border-dashed rounded-md"
-                placeholder="Param1"
-                value={param1}
-                onChange={handleChangeParam1}
-                disabled={isLoadingTx1 || isLoadingTx2 || isLoadingSign}
-              />
-              <input
-                className="m-1 w-full p-2 border border-blue-700 border-dashed rounded-md"
-                placeholder="Param2"
-                value={param2}
-                onChange={handleChangeParam2}
-                disabled={isLoadingTx1 || isLoadingTx2 || isLoadingSign}
-              />
+            <div className="mt-10 max-w-xs w-full flex flex-col gap-2 items-center border border-dotted border-blue-700 p-3 rounded-md">
+              <h2 className="text-2xl font-semibold underline decoration-dotted text-blue-900">Status</h2>
+              <p className="text-blue-900">{statuses[status]}</p>
+            </div>
+
+            <div className="max-w-xs w-full flex flex-col gap-2 items-center border border-dotted border-blue-700 p-3 rounded-md">
+              <h2 className="text-2xl font-semibold underline decoration-dotted text-blue-900">First tx</h2>
+
+              <div className="flex flex-row">
+                <input
+                  className="m-1 w-1/2 p-2 border border-blue-700 border-dotted rounded-md"
+                  placeholder="Param1"
+                  value={param1}
+                  onChange={handleChangeParam1}
+                  disabled={isLoadingTx1 || status === '1'}
+                />
+                <input
+                  className="m-1 w-1/2 p-2 border border-blue-700 border-dotted rounded-md"
+                  placeholder="Param2"
+                  value={param2}
+                  onChange={handleChangeParam2}
+                  disabled={isLoadingTx1 || status === '1'}
+                />
+              </div>
               <button
                 className="w-full border bg-blue-500 text-white text-xl font-semibold rounded-md p-2 disabled:bg-gray-500 disabled:opacity-70"
-                onClick={calculate}
-                disabled={isLoadingTx1 || isLoadingTx2 || isLoadingSign}
+                onClick={firstTx}
+                disabled={isLoadingTx1 || status === '1'}
               >
                 {isLoadingTx1 ? (
                   <div>
                     Pending first tx...<div className="inline-block animate-spin">↻</div>
                   </div>
-                ) : isLoadingSign ? (
+                ) : (
+                  <div>Set input data</div>
+                )}
+              </button>
+            </div>
+
+            <div className="max-w-xs w-full flex flex-col gap-2 items-center border border-dotted border-blue-700 p-3 rounded-md">
+              <h2 className="text-2xl font-semibold underline decoration-dotted text-blue-900">Second tx</h2>
+              <button
+                className="w-full border bg-blue-500 text-white text-xl font-semibold rounded-md p-2 disabled:bg-gray-500 disabled:opacity-70"
+                onClick={secondTx}
+                disabled={isLoadingTx2 || isLoadingSign || status === '0'}
+              >
+                {isLoadingSign ? (
                   <div>
                     Calculating and signing...<div className="inline-block animate-spin">↻</div>
                   </div>
@@ -265,11 +296,17 @@ export default function Home() {
                     Pending second tx...<div className="inline-block animate-spin">↻</div>
                   </div>
                 ) : (
-                  <div>Calculate</div>
+                  <div>Do off-chain math</div>
                 )}
               </button>
-              {status === '0' && calcResult && <p>Result: {calcResult}</p>}
             </div>
+
+            {status === '0' && calcResult > 0 && (
+              <div className="max-w-xs w-full flex flex-col gap-2 items-center border border-dotted border-blue-700 p-3 rounded-md">
+                <h2 className="text-2xl font-semibold underline decoration-dotted text-blue-900">Result</h2>
+                <p className="text-blue-900">{calcResult}</p>
+              </div>
+            )}
           </div>
         )}
       </div>
